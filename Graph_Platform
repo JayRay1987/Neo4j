@@ -1,0 +1,28 @@
+// A Neo4j instance at a minimum contains the system db and default db, Neo4j
+
+// System db stores metadata.
+
+// Default db is the user db.
+
+// Neo4j DBMS - index-free adajcency
+
+// RDBMS - Pie for Anne. Walk to town hall (index), wait in line, walk to Anne's house.
+// No learning route. Have to do same thing everytime.
+
+// Neo4j is a native graph db (graph as its core data model).
+
+// Connected data graphs no need for index.
+
+// Neo4j includes: clustering, ACID, index-free adjacency and optimized graph engine
+
+// Libraries included in Neo4j Desktop:
+
+// APOC
+// Graph Algorithm
+// GraphQL
+
+// Out of the box languages supported by Neo4j:
+
+// Java
+// Python
+// Javascript
