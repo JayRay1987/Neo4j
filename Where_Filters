@@ -1,0 +1,151 @@
+//two queries that do the same thing
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie {released: 2008})
+RETURN p, m
+
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE m.released = 2008
+RETURN p, m
+
+//returns person and movies that were released either in 2008 or 2009
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE m.released = 2008 OR m.released = 2009
+RETURN p, m
+
+//returns person and movies that were released between and inclusive of 2003 and 2004
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE m.released >= 2003 AND m.released <= 2004
+RETURN p.name, m.title, m.released
+
+//same query as above only expressed differently
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE 2003 <= m.released <= 2004
+RETURN p.name, m.title, m.released
+
+// boolean operators: AND, OR, XOR, NOT
+
+//same queries, different syntax
+MATCH (p:Person)
+RETURN p.name
+
+MATCH (p)
+WHERE p:Person
+RETURN p.name
+
+//same query, different syntax
+
+MATCH (p:Person)-[:ACTED_IN]->(:Movie {title: 'The Matrix'})
+RETURN p.name
+
+MATCH (p)-[:ACTED_IN]->(m)
+WHERE p:Person AND m:Movie AND m.title='The Matrix'
+RETURN p.name
+
+//testing for existence of a property
+//returns all the movies Jack Nicholson has acted in that have a tagline
+
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name='Jack Nicholson' AND exists(m.tagline)
+RETURN m.title, m.tagline
+
+//string related keywords: STARTS WITH, ENDS WITH, CONTAINS
+//returns all actors whose first name is Michael
+MATCH (p:Person)-[:ACTED_IN]->()
+WHERE p.name STARTS WITH 'Michael'
+RETURN p.name
+
+//strong comparisons are case sensitive
+//use toLower()
+MATCH (p:Person)-[:ACTED_IN]->()
+WHERE toLower(p.name) STARTS WITH 'michael'
+RETURN p.name
+
+//use =~ to specify the regular expression you are testing with.
+//returns all Person nodes with a name property that begins with Tom
+MATCH (p:Person)
+WHERE p.name =~'Tom.*'
+RETURN p.name
+//using regular expression means index will not be used.
+
+//return all people who wrote a move but did not direct a movie
+MATCH (p:Person)-[:WROTE]->(m:Movie)
+WHERE NOT exists( (p)-[:DIRECTED]->(m) )
+RETURN p.name, m.title
+
+//returns all the people Gene Hackman has acted in a movie in with and who also directed the movie
+MATCH (gene:Person)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(other:Person)
+WHERE gene.name= 'Gene Hackman'
+AND exists( (other)-[:DIRECTED]->(m) )
+RETURN  gene, other, m
+
+//testing lists of values [,,,]
+MATCH (p:Person)
+WHERE p.born IN [1965, 1970]
+RETURN p.name as name, p.born as yearBorn
+
+//returns the name of the actor who played Neo in the film The Matrix
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie)
+WHERE  'Neo' IN r.roles AND m.title='The Matrix'
+RETURN p.name
+
+//Retrieve all movies that Tom Cruise acted in and return their titles
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie) WHERE p.name = 'Tom Cruise' RETURN m.title AS Movie
+
+//returns all persons born in the 70's and their year of birth
+MATCH (p:Person) WHERE 1970 >= p.born <= 1979 RETURN p.name, p.born AS yearborn
+
+//returns all people who acted in The Matrix who were born after 1960
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie) WHERE p.born > 1960 AND m.title = 'The Matrix' RETURN p.name AS Name, p.born AS `year born`
+
+//return all movies released in 2000 by testing the node label and the released property
+MATCH m WHERE m:Movie AND m.released = 2000 RETURN m.title
+
+//return all writers of movies by testing relationship between the two nodes
+MATCH (a)-[rel]->(m)
+WHERE a:Person AND type(rel) = 'WROTE' AND m:Movie
+RETURN a.name as Name, m.title as Movie
+
+//return all people in the database that don't have a born property
+MATCH (p:Person) WHERE NOT exists(p.born) RETURN p.name AS name
+
+//returns all movies with a rating relationship
+MATCH (p:Person)-[rel]->(m:Movie) 
+WHERE exists(rel.rating) 
+RETURN p.name AS name, m.title as Movie, rel.rating as Rating
+
+//return all actors with names that begin with James
+MATCH (p:Person)-[:ACTED_IN]-(:Movie) 
+WHERE p.name STARTS WITH 'James' 
+RETURN p.name AS Name
+
+//return all movies, ratings and summarys that contain the word 'fun' in the summary
+MATCH (:Person)-[r:REVIEWED]->(m:Movie) WHERE toLower(r.summary) CONTAINS 'fun' RETURN m.title, r.rating, r.summary
+
+//return movies with love in the tagline
+MATCH (m:Movie) WHERE toLower(m.tagline) CONTAINS 'love' RETURN m.title
+
+//return all people who have produced a movie but not directed a movie
+MATCH (p:Person)-[:PRODUCED]->(m:Movie) 
+WHERE NOT ((p)-[:DIRECTED]->(:Movie)) 
+RETURN p.name, m.title
+
+
+//Returns the movies and their actors where one of the actors also directed the movie, returning the actors names, the director’s name, and the movie title. 
+MATCH (p1:Person)-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(p2:Person) 
+WHERE exists( (p2)-[:DIRECTED]->(m) ) 
+RETURN p1.name AS Actor, p2.name AS `Actor/Director`, m.title as Movie
+
+//return all movies released in the years 2000, 2004, 2008
+MATCH (m:Movie) WHERE m.released IN [2000, 2004, 2008] RETURN m.title, m.released
+
+//returns the movies that have an actor's role that is the name of the movie
+MATCH (p:Person)-[r:ACTED_IN]->(m:Movie) 
+WHERE m.title IN r.roles 
+RETURN m.title, p.name
+
+//Two Queries are the same
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie) 
+WHERE (p)-[:WROTE]-(m) 
+RETURN p.name
+
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[:WROTE]-(p:Person) 
+RETURN p.name
