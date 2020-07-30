@@ -1,0 +1,40 @@
+// graph is a collection of objects, each of which has links with the other objects.
+
+// Euler - bridges of Konigsberg
+
+// Nodes (vertex)
+
+// Relationships (edge) - can have a direction. Jane (Node) owns (relationship) a car (node)
+car owns Jane doesn't make sense.
+
+// it also has a type such as weight.
+
+// Travseral - finding route through a graph
+
+// Traversal Algos - random, shortest, longest.
+
+// Traveral in Neo4j, node can be visit more than once but relationship can be traversed only once (i.e. direction)
+
+// This is a path.
+
+// Graph database is an online database mgmt system with CRUD ops working on a graph data model.
+
+// Native storage 
+
+// Each node is an entity (a person, place, thing, category, etc.).
+
+// Node can have labels. Eg a location node is a node with the label location.
+// Another location node could be labelled business.
+
+// Relationship connects two nodes. Eg two nodes person and location could have a Lives_at relationship.
+// A relationship represents the verb or action betweem the two entities.
+
+// Married relationship between two person nodes would need two relationships.
+
+// Properties add additaionl detail to modes and relationships.
+
+// Node Person could have proprties - name and DOB.
+
+// Married Relationship  could have property - since 1978
+
+// Location reltaionshio could have a property - address
