@@ -1,0 +1,223 @@
+// Syntax for creating a relationship
+
+CREATE (x)-[:REL_TYPE]->(y)
+
+CREATE (x)<-[:REL_TYPE]-(y)
+
+// when you create a relationship it must have a direction.
+// you can query nodes in either direction.
+// but you must create a relationship direction.
+
+// creating a relationship example
+
+MATCH (a:Person), (m:Movie)
+WHERE a.name = 'Michael Caine' AND m.title = 'Batman Begins'
+CREATE (a)-[:ACTED_IN]->(m)
+RETURN a, m
+
+// creating multiple relationships
+
+// example
+
+MATCH (a:Person), (m:Movie), (p:Person)
+WHERE a.name = 'Liam Neeson' AND
+      m.title = 'Batman Begins' AND
+      p.name = 'Benjamin Melniker'
+CREATE (a)-[:ACTED_IN]->(m)<-[:PRODUCED]-(p)
+RETURN a, m, p
+
+// note when you create relationships based on MATCH clause,
+// you must be certain that only a single node is returned for the MATCH,
+// otherwise multiple relationships will be created.
+
+// creating relationship with properties
+
+MATCH (a:Person), (m:Movie)
+WHERE a.name = 'Katie Holmes' AND m.title = 'Batman Begins'
+CREATE (a)-[rel:ACTED_IN {roles: ['Rachel','Rachel Dawes']}]->(m)
+RETURN a.name, rel, m.title
+
+// creating nodes and relationships together
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+CREATE (a:Person)-[:ACTED_IN]->(m)
+SET a.name = 'Gary Oldman', a.born=1958
+RETURN a, m, p
+
+// note - be careful of duplication.
+
+// also, ensure there is only one :ACTED_IN relationship
+
+// between two nodes.
+
+// Syntax - adding properties to relationships
+
+SET r.propertyName = value
+
+SET r.propertyName1 = value1 , r.propertyName2 = value2
+
+SET r = {propertyName1: value1, propertyName2: value2}
+
+SET r += {propertyName1: value1, propertyName2: value2}
+
+// When specify the JSON-style object for assignment to 
+// the relationship using =, the object must include all 
+// of the properties for the relationship, just as you need 
+// to do for nodes. If you use +=, you can add or update 
+// properties, just as you do for nodes.
+
+// Example - adding properties to a relationship
+
+MATCH (a:Person), (m:Movie)
+WHERE a.name = 'Christian Bale' AND m.title = 'Batman Begins'
+CREATE (a)-[rel:ACTED_IN]->(m)
+SET rel.roles = ['Bruce Wayne','Batman']
+RETURN a, rel, m
+
+// Example - adding properties inline
+
+MATCH (a:Person), (m:Movie)
+WHERE a.name = 'Christian Bale' AND m.title = 'Batman Begins'
+CREATE (a)-[:ACTED_IN {roles: ['Bruce Wayne', 'Batman']}]->(m)
+RETURN a, m
+
+// Example - testing before creating relationship
+
+MATCH (a:Person),(m:Movie)
+WHERE a.name = 'Christian Bale' AND
+      m.title = 'Batman Begins' AND
+      NOT exists((a)-[:ACTED_IN]->(m))
+CREATE (a)-[rel:ACTED_IN]->(m)
+SET rel.roles = ['Bruce Wayne','Batman']
+RETURN a, rel, m
+
+// best way to prevent duplication is to use MERGE clause
+// rather than CREATE.
+
+// Removing properties from a relationship
+
+// similar to nodes. use REMOVE or SET to null.
+
+// Example
+
+MATCH (a:Person)-[rel:ACTED_IN]->(m:Movie)
+WHERE a.name = 'Christian Bale' AND m.title = 'Batman Begins'
+REMOVE rel.roles
+RETURN a, rel, m
+
+// alternatively:
+
+MATCH (a:Person)-[rel:ACTED_IN]->(m:Movie)
+WHERE a.name = 'Christian Bale' AND m.title = 'Batman Begins'
+SET rel.roles = null
+RETURN a, rel, m
+
+// Create the ACTED_IN relationship between the actors, 
+// Robin Wright, Tom Hanks, and Gary Sinise 
+// and the movie, Forrest Gump.
+
+MATCH (m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+MATCH (p:Person) 
+WHERE p.name = 'Tom Hanks' 
+OR p.name = 'Robin Wright' 
+OR p.name = 'Gary Sinise' 
+CREATE (p)-[:ACTED_IN]->(m)
+
+// Create the DIRECTED relationship between Robert Zemeckis 
+// and the movie, Forrest Gump.
+
+MATCH (m:Movie), (p:Person) 
+WHERE p.name = 'Robert Zemeckis' 
+AND m.title = 'Forrest Gump' 
+CREATE (p)-[:DIRECTED]->(m)
+
+// OR
+
+MATCH (m:Movie)
+WHERE m.title = 'Forrest Gump'
+MATCH (p:Person)
+WHERE p.name = 'Robert Zemeckis'
+CREATE (p)-[:DIRECTED]->(m)
+
+// create a new relationship, HELPED, 
+// from Tom Hanks to Gary Sinise
+
+MATCH (a1:Person) 
+WHERE a1.name = 'Tom Hanks' 
+MATCH (a2:Person) 
+WHERE a2.name = 'Gary Sinise' 
+CREATE (a1)-[rel:HELPED]->(a2) 
+RETURN a1, a2, rel
+
+// return all nodes connected to the movie, Forrest Gump
+// along with their relationships.
+
+MATCH(p:Person)-[rel]-(m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+RETURN p, rel, m
+
+// Add the roles property to the three ACTED_IN 
+// relationships that you just created to the movie, 
+// Forrest Gump using this information: Tom Hanks 
+// played the role, Forrest Gump. Robin Wright played the 
+// role, Jenny Curran. Gary Sinise played the role, 
+// Lieutenant Dan Taylor.
+
+MATCH (p:Person)-[rel:ACTED_IN]->(m:Movie)
+WHERE m.title = 'Forrest Gump'
+SET rel.roles =
+CASE p.name
+  WHEN 'Tom Hanks' THEN ['Forrest Gump']
+  WHEN 'Robin Wright' THEN ['Jenny Curran']
+  WHEN 'Gary Sinise' THEN ['Lieutenant Dan Taylor']
+END
+
+// Add a property to HELPED relationship
+
+MATCH (p1:Person)-[rel:HELPED]-(p2:Person) 
+WHERE p1.name = 'Tom Hanks' 
+AND p2.name = 'Gary Sinise' 
+SET rel.research = ['war history']
+
+// return names and roles of actors in Forrest Gump
+
+MATCH (p:Person)-[rel:ACTED_IN]-(m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+RETURN p.name, rel.roles
+
+
+// return information about any HELPED relationships
+
+MATCH (p1:Person)-[rel:HELPED]-(p2:Person) 
+RETURN p1.name, rel, p2.name
+
+// Modify the role that Gary Sinise played in the movie, 
+// Forrest Gump from Lieutenant Dan Taylor to Lt. Dan Taylor.
+
+MATCH (p:Person)-[rel:ACTED_IN]->(m:Movie) 
+WHERE m.title = 'Forrest Gump' AND p.name = 'Gary Sinise' 
+SET rel.roles = 'Lt. Dan Taylor' 
+RETURN m.title, p.name, rel.roles
+
+// Remove the research property fronm the HELPED relationship
+// from Tom Hanks to Gary Sinise
+
+MATCH (p1:Person)-[rel:HELPED]->(p2:Person) 
+WHERE p1.name = 'Tom Hanks' AND p2.name = 'Gary Sinise' 
+SET rel.research = null
+
+// OR
+
+MATCH (p1:Person)-[rel:HELPED]->(p2:Person) 
+WHERE p1.name = 'Tom Hanks' AND p2.name = 'Gary Sinise'
+REMOVE rel.research 
+
+// Query graph to confirm modifications.
+
+MATCH (p1:Person)-[rel:ACTED_IN]->(m:Movie)
+
+// 
+WHERE m.title = 'Forrest Gump' 
+RETURN p1, rel, m
