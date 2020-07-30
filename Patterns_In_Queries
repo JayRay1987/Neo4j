@@ -1,0 +1,92 @@
+//all the followers of people who reviewed the movie in question
+MATCH (follower:Person)-[:FOLLOWS]->(reviewer:Person)-[:REVIEWED]->(m:Movie)
+WHERE m.title = 'The Replacements'
+RETURN follower.name, reviewer.name
+
+//all the people who acted in or directed a movie released in 2000
+MATCH (a:Person)-[:ACTED_IN]->(m:Movie),
+      (m)<-[:DIRECTED]-(d:Person)
+WHERE m.released = 2000
+RETURN a.name, m.title, d.name
+
+//same as above, better syntax
+MATCH (a:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(d:Person)
+WHERE m.released = 2000
+RETURN a.name, m.title, d.name
+WHERE m.title = 'The Replacements'
+RETURN follower.name, reviewer.name
+
+//actors that acted with Keanu Reeves but not in the same films as Keanu and Hugo Weaving
+MATCH (keanu:Person)-[:ACTED_IN]->(movie:Movie)<-[:ACTED_IN]-(n:Person),
+     (hugo:Person)
+WHERE keanu.name='Keanu Reeves' AND
+      hugo.name='Hugo Weaving'
+AND NOT (hugo)-[:ACTED_IN]->(movie)
+RETURN n.name
+
+//all movies, directors and actors Meg Ryan has worked on and with.
+MATCH (meg:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(d:Person),
+      (other:Person)-[:ACTED_IN]->(m)
+WHERE meg.name = 'Meg Ryan'
+
+//All actors that worked with Val Kilmer in Top gun
+MATCH (valKilmer:Person)-[:ACTED_IN]->(m:Movie)
+MATCH (actor:Person)-[:ACTED_IN]->(m)
+WHERE valKilmer.name = 'Val Kilmer'
+RETURN m.title as movie , actor.name
+RETURN m.title as movie, d.name AS director , other.name AS `co-actors`
+
+//who is 2 steps away from Paul Blythe on the follower network
+MATCH (follower:Person)-[:FOLLOWS*2]->(p:Person)
+WHERE follower.name = 'Paul Blythe'
+RETURN p.name
+
+//finding shortest path shortestPath()
+//shortest path between The Matrix and A Few Good Men
+//* can denote any relationship
+
+MATCH p = shortestPath((m1:Movie)-[*]-(m2:Movie))
+WHERE m1.title = 'A Few Good Men' AND
+      m2.title = 'The Matrix'
+RETURN  p
+
+//six degrees of Kevin Bacon
+MATCH p = shortestPath((p1:Person)-[*]-(p2:Person))
+WHERE p1.name = 'Kevin Bacon' AND
+      p2.name = 'Al Pacino'
+RETURN  p
+
+
+//returns all nodes connected to the movie
+MATCH paths = (m:Movie)-[rel]-(p:Person)
+WHERE m.title = 'The Replacements'
+RETURN paths
+
+//Optional Pattern Matching
+//different to MATCH as it includes nulls.
+MATCH (p:Person)
+WHERE p.name STARTS WITH 'James'
+OPTIONAL MATCH (p)-[r:REVIEWED]->(m:Movie)
+RETURN p.name, type(r), m.title
+
+//EXERCISES
+//All movies Gene Hackman has acted in, along with the directors of the movies and the actors that acted in the same film.
+MATCH (Gene:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(d:Person), (p:Person)-[:ACTED_IN]->(m) WHERE Gene.name = 'Gene Hackman' RETURN m.title, d.name, p.name
+RETURN paths
+
+//rerurn all nodes that James Thompson has the follows relationship with in both directions
+MATCH (p1:Person)-[:FOLLOWS]-(p2:Person) WHERE p1.name = 'James Thompson' RETURN p1.name, p2.name
+
+//return same as above but are 3 hops away
+MATCH (p1:Person)-[:FOLLOWS*3]-(p2:Person) WHERE p1.name = 'James Thompson' RETURN p1.name, p2.name
+
+//return same as above that are 1 and 2 hops away
+MATCH (p1:Person)-[:FOLLOWS*1..2]-(p2:Person) WHERE p1.name = 'James Thompson' RETURN p1.name, p2.name
+
+//return all people with a name beginning with Tom and optionally return all those named Tom who directed a movie.
+MATCH (p:Person)
+WHERE p.name STARTS WITH 'Tom'
+OPTIONAL MATCH (p)-[:DIRECTED]->(m:Movie)
+RETURN p.name, m.title
+
+//QUESTION? - DOES THE QUERY ENGINE LOOK AT THE WHERE STATEMENTS FIRST?
