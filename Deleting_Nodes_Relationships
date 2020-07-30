@@ -1,0 +1,99 @@
+// Deleting nodes
+
+CREATE (p:Person {name: 'Jane Doe'})
+
+// to delete node
+
+MATCH (p:Person)
+WHERE p.name = 'Jane Doe'
+DELETE p
+
+// You can delete a node provided you have a reference to it 
+// and node has no relationships.
+
+// Deleting relationships
+
+// create relationships
+
+MATCH (a:Person), (m:Movie)
+WHERE a.name = 'Katie Holmes' AND m.title = 'Batman Begins'
+CREATE (a)-[:WROTE]->(m)
+CREATE (a)-[:DIRECTED]->(m)
+WITH a
+MATCH (a)-[rel]-()
+RETURN type(rel)
+
+// delete relationships
+
+MATCH (a:Person)-[rel:WROTE | DIRECTED]->(m:Movie)
+WHERE a.name = 'Katie Holmes' AND m.title = 'Batman Begins'
+DELETE rel
+RETURN a, m
+
+// confirm deletion example
+
+MATCH (a:Person)-[rel]-()
+WHERE a.name = 'Katie Holmes'
+RETURN count(rel) AS `Number of Katie Holmes relationships:`
+
+// deleting nodes and relationships
+
+// DETACH DELETE
+
+// when you use DETACH DELETE the node along with its relationships
+// to and from the node are deleted and then the node is deleted.
+
+// example - try to delete node
+
+MATCH (p:Person)
+WHERE p.name = 'Liam Neeson'
+DELETE p
+
+// result is an error
+
+// using DETACH DELETE
+
+MATCH (p:Person)
+WHERE p.name = 'Liam Neeson'
+DETACH DELETE  p
+
+
+// Examples
+
+// Delete the HELPED relationship from the graph.
+
+MATCH (a1:Person)-[rel:HELPED]-(a2:Person) 
+WHERE a1.name = 'Tom Hanks' 
+AND a2.name = 'Gary Sinise' 
+DELETE rel 
+RETURN a1, a2
+
+// OR
+
+MATCH (:Person)-[rel:HELPED]-(:Person)
+DELETE rel
+
+// Query the graph to confirm relationship no longer exists
+
+MATCH (:Person)-[rel:HELPED]-(:Person)
+RETURN rel
+
+// Query the graph to display Forrest Gump 
+// and all of its relationships.
+
+MATCH (p:Person)-[rel]->(m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+RETURN p, rel, m
+
+// Delete Forrest Gump, along with its relationships in the graph
+
+MATCH (m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+DETACH DELETE m
+
+// Query the graph to confirm that Forrest Gump
+// has been deleted
+
+MATCH (p:Person)-[rel]-(m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+RETURN p, rel, m
