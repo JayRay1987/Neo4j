@@ -1,0 +1,195 @@
+// node is an element of a graph that represents a domain entity.
+// It has 0 or more labels, properties and relationships to or from
+// other nodes in the graph.
+
+// syntax for creating a node
+
+CREATE(optionalVariable optionalLabels {optionalProperties})
+
+// Example - a node of type/label Movie with title/property, Batman Begins.
+// This node can be retrieved using the title.
+
+CREATE(:Movie {title: 'Batman Begins'})
+
+// Example - a node with two labels to the graph of types Movie and Action
+// with title property, Batman Begins.
+
+CREATE(:Movie:Action {title: 'Batman Begins})
+
+// Example - with the above as well as a variable m that can be used
+// for processing.
+
+CREATE(m:Movie:Action {title: 'Batman Begins'})
+
+// Example
+
+CREATE(m:Movie:Action {title: 'Batman Begins'})
+RETURN m.title
+
+// when graph engine creates a node it automatically assigns it
+// a read-only unique ID to the node.
+// This is not a property of a node. Cannot use it to retrieve node.
+
+// CREATING MULTIPLE NODES
+
+CREATE
+(:Person {name: 'Michael Caine', born: 1933}),
+(:Person {name: 'Liam Neeson', born: 1952}),
+(:Person {name: 'Katie Holmes', born: 1978}),
+(:Person {name: 'Benjamin Melniker', born: 1913})
+
+
+// Adding labels to a node
+
+SET x:Label
+
+// adding one label to node referenced by variable x
+
+SET x:Label1:Label2
+
+// Example
+
+// Here is an example where we add the Fantasy label 
+// to the node that has a labels, Movie and Action:
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+SET m:Fantasy
+RETURN labels(m)
+
+// note the function labels()
+
+// Removing labels from a node
+
+REMOVE x:Label
+
+REMOVE x:Label1:Label2
+
+// Example
+
+// Here is an example where we remove the Action 
+// and Fantasy labels from the node that has the label, Action:
+
+MATCH (m:Action)
+REMOVE m:Action, m:Fantasy
+RETURN labels(m)
+
+// Adding properties to a node
+
+// Syntax for adding a property
+
+SET x.propertyName = value
+
+SET x.propertyName1 = value1, x.propertyName2 = value 2
+
+SET x = {propertyName1: value1, propertyName2: value2}
+
+SET x += {propertyName1: value1, propertyName2: value2}
+
+// note that the type of data for a property is not enforced.
+
+// e.g. you can assign a string value to a property that was numeric.
+
+// Example - adding properties to a node
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+SET m.released = 2005, m.lengthInMinutes = 140
+RETURN m
+
+// adding properties to node
+// set property values using JSON-style object containing property keys
+// and values.
+// Note that all properties must be included in the object.
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+SET  m = {title: 'Batman Begins',
+          released: 2005,
+          lengthInMinutes: 140,
+          videoFormat: 'DVD',
+          grossMillions: 206.5}
+RETURN m
+
+
+// three property key values we had already added before.
+// two property key values added for the first time.
+// once a property key is added to the graph, it is never removed.
+
+CALL db.propertykeys()
+
+// retrieving properties of a node
+
+// use a cypher map to retrieve properties of a node
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+RETURN properties(m)
+
+// updating properties - JSON-style
+
+// example - add awards property to node and update grossMillions property:
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+SET  m += { grossMillions: 300,
+            awards: 66}
+RETURN m
+
+// syntax: removing properties from a node
+
+// use REMOVE or set property to NULL.
+
+REMOVE x.propertyName
+
+SET x.propertyName = null
+
+// Example
+
+MATCH (m:Movie)
+WHERE m.title = 'Batman Begins'
+SET m.grossMillions = null
+REMOVE m.videoFormat
+RETURN m
+
+
+// Add the label Female to all Person 
+// nodes that has a person whose name starts with Robin.
+
+MATCH (p:Person) 
+WHERE p.name STARTS WITH 'ROBIN' 
+SET p:Female 
+RETURN labels(p)
+
+// remove the female label from the nodes that have this label.
+
+MATCH (p:Person)
+REMOVE p:Female
+
+// Add properties to Forrest Gump
+
+MATCH (m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+SET m:OlderMovie, 
+m.title = 'Forrest Gump', 
+m.released = 1994, 
+m.tagline = "Life is like a box of chocolates...you never know what you're gonna get", 
+m.lengthInMinutes = 142
+
+// Remove property from Forrest Gump
+
+MATCH (m:Movie) 
+WHERE m.title = 'Forrest Gump' 
+SET m.lengthInMinutes = null
+
+// add properties to Robin Wright
+
+MATCH (p:Person)
+WHERE p.name = 'Robin Wright'
+SET p.born = 1966, p.birthPlace = 'Dallas'
+
+// add more properties to existing set of properties
+
+MATCH (m:Movie) 
+WHERE m.title = 'The Matrix' 
+SET m += {awards: 50, grossMillions: 100}
