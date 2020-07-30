@@ -1,0 +1,163 @@
+// Cypher  - declaration query language
+
+// ASCII Art. Human readable.
+
+// Nouns are nodes and verbs are relationships and adjectives and adverbs are properties
+
+// Cypher Language
+// (n) - reps a node
+
+
+// anonymous node not be referenced later in the query
+()
+// variable p, a reference to a node used later
+(p)
+// anonymous node of type Person
+(:Person)
+// p, a reference to a node of type Person
+(p:Person)
+// p, a reference to a node of types Actor and Director
+(p:Actor:Director)
+
+// Use // for comments in cypher
+
+// get the schema of the database
+CALL db.schema.visualization()
+
+// query structure
+MATCH(variable)
+RETURN variable
+
+// returns all the nodes
+MATCH (n)
+RETURN n
+
+// returns all the person nodes
+MATCH(p:Person)
+RETURN p
+
+
+// All nodes of the same type need not have the smae properties
+// eg Movie node has title and released properties, and some have a tagline property
+
+CALL db.propertyKeys()
+
+MATCH (variable {propertyKey: propertyValue})
+RETURN variable
+
+MATCH (variable:Label {propertyKey: propertyValue})
+RETURN variable
+
+MATCH (variable {propertyKey1: propertyValue1, propertyKey2: propertyValue2})
+RETURN variable
+
+MATCH (variable {prop1:value})
+RETURN variable.prop2, variable.prop3
+
+// Examples
+
+MATCH(p:Person {born:1965})
+RETURN p.name, p.born
+
+MATCH(variable:Label {propertyKey1: propertyValue1})
+RETURN variable.propertyKey2 As alias2
+
+MATCH(p:Person {born:1965})
+RETURN p.name AS name, p.born AS `birth year`
+
+MATCH (node1)-[:REL_TYPE]->(node2)
+RETURN node1, node2
+
+
+MATCH (node1)-[:REL_TYPE]->(node2)
+RETURN node1, node2
+
+MATCH (node1)-[:REL_TYPEA | REL_TYPEB]->(node2)
+RETURN node1, node2
+
+MATCH (p:Person)-[rel:ACTED_IN]->(m:Movie {title: 'The Matrix'})
+RETURN p, rel, m
+
+MATCH (p:Person)-[rel]->(:Movie {title:'The Matrix'})
+RETURN p.name, type(rel)
+
+// DIRECTIONAL QUERY
+MATCH  (p:Person)-[:FOLLOWS]->(:Person {name:'Angela Scope'})
+RETURN p
+
+// REVERSE DIRECTIONAL QUERY
+MATCH  (p:Person)<-[:FOLLOWS]-(:Person {name:'Angela Scope'})
+RETURN p
+
+// ANY DIRECTION QUERY
+MATCH  (p1:Person)-[:FOLLOWS]-(p2:Person {name:'Angela Scope'})
+
+// we can write a Cypher query to return all followers of the followers of Jessica Thompson
+MATCH  (p:Person)-[:FOLLOWS]->(:Person)-[:FOLLOWS]->(:Person {name:'Jessica Thompson'})
+RETURN p
+
+
+MATCH  (p:Person)-[:FOLLOWS]->(p2:Person)-[:FOLLOWS]->(p3:Person {name:'Jessica Thompson'})
+RETURN p.name, p2.name, p3.name
+
+
+MATCH (a:Person)-[:ACTED_IN]->(m:Movie)<-[:DIRECTED]-(d:Person)
+RETURN a.name, m.title, d.name
+
+// returning a path. Assigning a query to a variable
+MATCH  path = (:Person)-[:FOLLOWS]->(:Person)-[:FOLLOWS]->(:Person {name:'Jessica Thompson'})
+RETURN  path
+
+//
+
+MATCH  path = (:Person)-[:ACTED_IN]->(:Movie)<-[:DIRECTED]-(:Person {name:'Ron Howard'})
+RETURN  path
+
+
+
+// Cypher style recommendations
+// Here are the Neo4j-recommended Cypher coding standards that we use in this training:
+
+// Node labels are CamelCase and begin with an upper-case letter (examples: Person, NetworkAddress). Note that node labels are case-sensitive.
+// Property keys, variables, parameters, aliases, and functions are camelCase and begin with a lower-case letter (examples: businessAddress, title). Note that these elements are case-sensitive.
+// Relationship types are in upper-case and can use the underscore. (examples: ACTED_IN, FOLLOWS). Note that relationship types are case-sensitive and that you cannot use the “-” character in a relationship type.
+// Cypher keywords are upper-case (examples: MATCH, RETURN). Note that Cypher keywords are case-insensitive, but a best practice is to use upper-case.
+// String constants are in single quotes, unless the string contains a quote or apostrophe (examples: ‘The Matrix’, “Something’s Gotta Give”). Note that you can also escape single or double quotes within strings that are quoted with the same using a backslash character.
+// Specify variables only when needed for use later in the Cypher statement.
+// Place named nodes and relationships (that use variables) before anonymous nodes and relationships in your MATCH clauses when possible.
+// Specify anonymous relationships with -->, --, or <--.
+
+//returns all the people who wrote the film speed racer
+MATCH (p:Person)-[:WROTE]->(:Movie {title: 'Speed Racer'}) RETURN p.name
+
+//returns all people who have written a movie
+MATCH (p:Person)-[:WROTE]->(:Movie) RETURN p.name
+
+//returns all the people who acted in a particular film
+MATCH (p:Person)-[:ACTED_IN]->(:Movie {title: 'Speed Racer'}) RETURN p.name
+
+
+//returns all the people who have directed a particular film
+MATCH (p:Person)-[:DIRECTED]->(:Movie {title: 'Speed Racer'}) RETURN p.name
+
+//returns all the movies Tom Hanks has been associated with
+MATCH (p:Person {name: 'Tom Hanks'})-[:ACTED_IN | DIRECTED]->(m:Movie) RETURN m.title
+
+//OR
+MATCH (m:Movie)<--(:Person {name: 'Tom Hanks'}) RETURN m.title
+
+//All the movies that Keanu Reeves is associated with
+MATCH (:Person {name: 'Keanu Reeves'})-->(m:Movie) RETURN m.title
+
+//return all the people assoiated with a particular movie
+
+MATCH (p:Person)-->(m:Movie {title: 'The Matrix Reloaded'}) RETURN p.name
+
+//return all the movies associated with Tom Hanks and the type of relationship he has with the movie
+MATCH (m:Movie)-[rel]-(:Person {name: 'Tom Hanks'}) RETURN m.title, type(rel)
+
+//returns the type of roles Tom Hanks played in his movies
+MATCH (m:Movie)-[rel:ACTED_IN]-(:Person {name: 'Tom Hanks'}) RETURN m.title, rel.roles
+
+//returns all roles played in the movie The Matrix Reloaded
+MATCH (m:Movie {title: 'The Matrix Reloaded'})-[rel:ACTED_IN]-(p:Person) RETURN p.name, rel.roles
