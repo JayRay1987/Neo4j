@@ -144,7 +144,7 @@ REMOVE x.propertyName
 
 SET x.propertyName = null
 
-// Example
+// EXERCISES
 
 MATCH (m:Movie)
 WHERE m.title = 'Batman Begins'
