@@ -99,7 +99,7 @@ RETURN a, rel, m
 
 // similar to nodes. use REMOVE or SET to null.
 
-// Example
+// EXERCISES
 
 MATCH (a:Person)-[rel:ACTED_IN]->(m:Movie)
 WHERE a.name = 'Christian Bale' AND m.title = 'Batman Begins'
