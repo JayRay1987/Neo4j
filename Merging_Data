@@ -1,0 +1,236 @@
+// Use MERGE to either create new nodes and relationships
+// or to make changes to existing nodes and relationships.
+
+// Using Create
+// Node - If a node with same property values exists, a duplicate is created.
+// Label - If the label exists for the node, node is not updated.
+// Property - If node or relationship property exists, it is updated with new
+// value.
+// NOTE: if you use = rather than +=, existing properties are removed if they
+// are no included in the set.
+// Relationship - if relationship exists, a duplicate relationship is created.
+
+// Using Merge
+// MERGE clause used to find nodes or patterns in graph.
+// if node or pattern not found, by default, it is created.
+
+// MERGE used:
+// Create unique node based on label and key info for a property or set of 
+// properties.
+// Update a node based on label and key info for a property or set of properties.
+// Create a unique relationship between two nodes.
+// Create a unique node and relationship in the context of another node.
+
+// MERGE Syntax
+// MERGE (variable:Label{nodeProperties})
+// RETURN variable
+
+// If existing node with Label and nodeProperties found, no node created.
+// If node not found, node created.
+
+// nodeProperties for MERGE should satisfy uniqueness constraint.
+
+MATCH (p:Person)
+WHERE p.name = 'Michael Caine'
+RETURN p
+
+// Node values are name and born. Label for node is Person.
+
+// Example - Using Merge
+
+MERGE (a:Actor {name: 'Michael Caine'})
+SET a.born = 1933
+RETURN a
+
+// Actor label with key property name of Michael Caine and born property to 1933.
+// Label, Actor is new so new entity in graph.
+
+// When using MERGE only specify properties that have unique values and 
+// unique labels.
+
+// If we run MERGE code again. MERGE found node in the graph and therefore didn't
+// create a new one.
+
+// Merge to create relationships
+
+// Syntax
+
+// MERGE (variable1:Label1 {nodeProperties1})-[:REL_TYPE]->
+// (variable2:Label2 {nodeProperties2})
+// RETURN variable
+
+// If the relationship doesn't exist the relationship is created.
+
+// Example
+
+MATCH (p {name: 'Michael Caine'})-[*0..1]-(m)
+RETURN p, m
+
+// Example - Merge to create relationships
+
+MATCH (p {name: 'Michael Caine'}),(m:Movie {title:'Batman Begins'})
+MERGE (p)-[:ACTED_IN]->(m)
+RETURN p,m
+
+// since the relationship between Person Michael Caine and Batman Begins exists
+// the relationship is not created.
+// Whereas the relationship between Actor Michael Caine and Batman Begins does not
+// exists and so the relationship is created.
+
+// Best practise with MERGE is to include the direction of the relationship.
+
+// Create with Merge
+
+// Using MERGE clause with ON CREATE to assign values.
+
+MERGE (a:Person {name: 'Sir Michael Caine'})
+ON CREATE SET a.birthPlace = 'London',
+              a.born = 1934
+RETURN a
+
+// Find all nodes related to Michael Caine
+
+MATCH (p)-[*0..1]-(m)
+WHERE p.name CONTAINS 'Caine'
+RETURN p, m
+
+// Update properties using Merge
+
+MERGE (a:Person {name: 'Sir Michael Caine'})
+ON CREATE SET a.born = 1934,
+              a.birthPlace = 'UK'
+ON MATCH SET a.birthPlace = 'UK'
+
+// Existing node with name, Sir Michael Caine, is updated with the new
+// birthPlace. No new node is created. 
+
+// Using MERGE to create relationships
+
+// Use MERGE to create relationships only if you need to ensure that a 
+// relationship is unique and you are not sure it already exists.
+
+MATCH (p:Person), (m:Movie)
+WHERE m.title = 'Batman Begins' AND p.name ENDS WITH 'Caine'
+MERGE (p)-[:ACTED_IN]->(m)
+RETURN p, m
+
+// In the above we use MERGE because we want to connect Person node with name,
+// Sir Michael Caine, to the movie, Batman Begins. But we don't want to duplicate
+// the relationship between Person node with name, Michael Caine, to the movie,
+// Batman Begins.
+
+// Use MERGE Carefully.
+
+// EXERCISES
+
+// Use MERGE to create (ON CREATE) a node of type 
+// Movie with the title property, Forrest Gump. If created, 
+// set the released property to 1994.
+
+MERGE (m:Movie {title: 'Forrest Gump'}) 
+ON CREATE SET m.released = 1994 
+RETURN m
+
+// Use MERGE to update (ON MATCH) a node of type Movie with 
+// the title property, Forrest Gump. If found, set the 
+// tagline property to "Life is like a box of chocolates…​you 
+// never know what you're gonna get.".
+
+MERGE (m:Movie {title: 'Forrest Gump'})
+ON CREATE SET m.released = 1994 
+ON MATCH SET m.tagline = "Life is like a box of chocolates...you never know what you're gonna get." 
+RETURN m
+
+// Use MERGE to create (ON CREATE) a node of type Production 
+// with the title property, Forrest Gump. If created, set 
+// the property year to the value 1994.
+
+MERGE (p:Production {title: 'Forrest Gump'}) 
+ON CREATE SET p.year = 1994 
+RETURN p
+
+// Query the graph to find labels for nodes with the 
+// title property, Forrest Gump.
+
+MATCH (m) 
+WHERE m.title = 'Forrest Gump' 
+RETURN labels(m)
+
+// Use MERGE to update (ON MATCH) the existing Production 
+// node for Forrest Gump to add the company property with a 
+// value of Paramount Pictures.
+
+MERGE (p:Production {title: 'Forrest Gump'}) 
+ON MATCH SET p.company = 'Paramount Pictures' 
+RETURN p
+
+// Use MERGE to add the OlderMovie label to the movie, 
+// Forrest Gump.
+
+MERGE (m:Movie {title: 'Forrest Gump'}) 
+ON MATCH SET m:OlderMovie 
+RETURN labels(m)
+
+// Use MERGE to create two nodes and a single relationship
+MERGE (p:Person {name: 'Robert Zemeckis'})-[:DIRECTED]->(m {title: 'Forrest Gump'})
+
+// Find the correct Person node to delete
+
+MATCH (p:Person {name: 'Robert Zemeckis'})-[rel]-(x)
+WHERE NOT EXISTS (p.born)
+RETURN p, rel, x
+
+// Delete this Person node, along with its relationships.
+
+MATCH(p:Person {name: 'Robert Zemeckis'})--() 
+WHERE NOT EXISTS (p.born) 
+DETACH DELETE p
+
+// Find the correct Forrest Gump to delete
+
+MATCH (m)
+WHERE m.title = 'Forrest Gump' AND labels(m) = []
+RETURN m, labels(m)
+
+// Delete this Forrest Gump node
+
+MATCH (m:Movie)
+WHERE m.title = 'Forrest Gump' AND labels(m) = []
+DETACH DELETE m
+
+// Use MERGE to create the DIRECTED relationship between 
+// Robert Zemeckis and the Movie, Forrest Gump.
+
+MATCH (p:Person), (m:Movie)
+WHERE p.name = 'Robert Zemeckis' AND m.title = 'Forrest Gump'
+MERGE (p)-[:DIRECTED]->(m)
+
+// Use MERGE to create the ACTED_IN relationship between the 
+// actors, Tom Hanks, Gary Sinise, and Robin Wright and the 
+// Movie, Forrest Gump.
+
+MATCH (p:Person), (m:Movie)
+WHERE p.name IN ['Tom Hanks','Gary Sinise', 'Robin Wright']
+      AND m.title = 'Forrest Gump'
+MERGE (p)-[:ACTED_IN]->(m)
+
+// Modify the relationship property, role for their roles in 
+// Forrest Gump:
+// Tom Hanks is Forrest Gump
+// Gary Sinise is Lt. Dan Taylor
+// Robin Wright is Jenny Curran
+
+MATCH (p:Person)-[rel:ACTED_IN]->(m:Movie)
+WHERE m.title = 'Forrest Gump'
+SET rel.roles =
+CASE p.name
+  WHEN 'Tom Hanks' THEN ['Forrest Gump']
+  WHEN 'Robin Wright' THEN ['Jenny Curran']
+  WHEN 'Gary Sinise' THEN ['Lt. Dan Taylor']
+END
+
+// Query graph to show updates
+
+MATCH (p:Person)-[rel:ACTED_IN]->(m:Movie)
+WHERE m.title = 'Forrest Gump'
+RETURN p.name, rel.roles, m.titles
