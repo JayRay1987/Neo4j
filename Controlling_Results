@@ -106,13 +106,15 @@ WITH a, collect(m.title) AS movies
 WHERE size(movies) = 5
 RETURN a.name, movies
 
-// EXAMPLES
-//First write a query to retrieve all actors that acted in movies during the 1990s, where you return the released date, the movie title, and the collected actor names for the movie. For now do not worry about duplication.
+// EXERCISES
+// First write a query to retrieve all actors that acted in movies during the 1990s, where you return the released date, the movie title, 
+// and the collected actor names for the movie. For now do not worry about duplication.
 MATCH (a:Person)-[:ACTED_IN]->(m:Movie) 
 WHERE 1990  <=  m.released < 2000 
 RETURN m.released, m.title, collect(a.name) AS actors
 
-// Next, modify the query so that the released date records returned are not duplicated. To implement this, you must add the collection of the movie titles to the results returned.
+// Next, modify the query so that the released date records returned are not duplicated. To implement this, you must add the collection of the 
+// movie titles to the results returned.
 MATCH (a:Person)-[:ACTED_IN]->(m:Movie) 
 WHERE 1990  <=  m.released < 2000 
 RETURN m.released, collect(a.name) AS actors, collect(m.title) AS movies
