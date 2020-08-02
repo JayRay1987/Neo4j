@@ -1,0 +1,171 @@
+// Uniqueness and existence in the graph
+
+// Cypher:
+
+// Add a uniqueness constraint - a value for a property is unique for all nodes
+// of that type.
+
+// Add an existence constraint - a node or relationship, created or modified,
+// has certain properties.
+
+// Add node key - values for properties of a node of a given type is unique.
+
+// Existence constraints and nodes keys only available in Enterprise Edition 
+// of Neo4j
+
+// ensuring that title for a node of type Movie is unique:
+
+CREATE CONSTRAINT UniqueMovieTitleConstraint ON (m:Movie) ASSERT m.title IS UNIQUE
+
+// it will fail if there are more than one Movie nodes with same value.
+
+// if we try and create a new node with title The Matrix it will fail
+
+CREATE (:Movie {title: 'The Matrix'})
+
+// if you try and modify the value of a property where uniqueness assertion fails
+// the property will not be updated.
+
+MATCH (m:Movie {title: 'The Matrix'})
+SET m.title = 'Top Gun'
+
+// Adding an existence constraint that fails
+
+CREATE CONSTRAINT ExistsMovieTagline ON (m:Movie) ASSERT exists(m.tagline)
+
+// this will fail as some films do not have taglines.
+
+// tagline must exist first before adding the existence constraint.
+
+// Adding an existence constraint
+
+CREATE CONSTRAINT ExistsREVIEWEDRating
+       ON ()-[rel:REVIEWED]-() ASSERT exists(rel.rating)
+
+// do not need to specify the direction of the relationship
+
+// attempting to remove property from relationship will fail too
+
+// retrieve constraints defined for the graph
+
+CALL db.constraints()
+
+// Remove constraints
+
+// Use DROP CONSTRAINT
+
+DROP CONSTRAINT ExistsREVIEWEDRating
+
+// creating multi-property uniqueness/existence constraint: node key
+
+// we can create a node key that does not allow a Person node to be created
+// where both the name and born properties are the same.
+
+CREATE CONSTRAINT UniqueNameBornConstraint
+       ON (p:Person) ASSERT (p.name, p.born) IS NODE KEY
+
+// fails as there are Person nodes in graph that do not have the born 
+// property defined.
+
+// Cleaning up the graph to support constraint
+
+// for all nodes without born properties set to 0
+
+MATCH (p:Person)
+WHERE NOT exists(p.born)
+SET p.born = 0
+
+// testing the node key
+
+CREATE (:Person {name: 'Jessica Thompson', born: 0})
+
+// testing the node key
+
+MATCH (p:Person {name: 'Jessica Thompson', born: 0})
+REMOVE p.born
+
+// Exercises
+// Add uniqueness constraint named PersonNameUniqueConstraint to the
+// Person nodes in the graph
+
+CREATE CONSTRAINT PersonNameUniqueConstraint 
+ON (p:Person) 
+ASSERT p.name IS UNIQUE
+
+// Add Tom Hanks to the graph
+
+CREATE (:Person {name: 'Tom Hanks'})
+
+// Add an existence contraint to the Person nodes
+
+CREATE CONSTRAINT PersonBornExistsContraint 
+ON (p:Person) 
+ASSERT exists(p.born)
+
+// This will fail.
+
+// Update Person nodes to have a born property
+
+MATCH (p:Person) WHERE NOT exists(p.born) SET p.born = 0
+
+// add an existence constraint named PersonBornExistsConstraint
+// as above
+
+CREATE CONSTRAINT PersonBornExistsContraint 
+ON (p:Person) 
+ASSERT exists(p.born)
+
+// try adding Sean Penn to graph
+
+CREATE (:Person {name: 'Sean Penn'})
+
+// This will fail as Sean Penn doesn't have a born property.
+
+// add an existence constraint to a relationship in the graph
+
+CREATE CONSTRAINT ActedInRolesExistConstraint 
+ON ()-[rel:ACTED_IN]-() 
+ASSERT exists(rel.roles)
+
+// Add an ACTED_IN relationship from the person, 
+// Emil Eifrem to the movie, Forrest Gump where the roles 
+// property is not set.
+
+MATCH (p:Person), (m:Movie)
+WHERE p.name = 'Emil Eifrem' AND
+      m.title = 'Forrest Gump'
+MERGE (p)-[:ACTED_IN]->(m)
+
+// fails as must have roles property
+
+CREATE CONSTRAINT MovieTitleReleasedConstraint 
+ON (m:Movie) 
+ASSERT (m.title, m.released) IS NODE KEY
+
+// Add movie node to graph
+
+CREATE(:Movie {title: 'Back to the Future', released: 1985, tagline: 'Our Future.'})
+
+// Add another movie node with same name as above
+
+CREATE (:Movie {title: 'Back to the Future', released: 2018, tagline: 'The future is ours.'})
+
+// drop Acted_In constraint
+
+DROP CONSTRAINT ActedInRolesExistConstraint
+
+// Notes
+
+// What are some of the constraints you can create for the data in your graph?
+
+// Property value for a node with a given label is unique.
+// Property for a node with a given label must exist.
+
+// What types of uniqueness constraints can you define for a graph?
+
+// Unique values for a property of a node
+// Unique values for a set of properties of a node
+
+// How many properties can be defined for a NODE KEY constraint?
+
+/ 1, 2, unlimited.
