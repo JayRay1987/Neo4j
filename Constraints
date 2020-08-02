@@ -168,4 +168,4 @@ DROP CONSTRAINT ActedInRolesExistConstraint
 
 // How many properties can be defined for a NODE KEY constraint?
 
-/ 1, 2, unlimited.
+// 1, 2, unlimited.
