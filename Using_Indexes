@@ -152,6 +152,10 @@ RETURN node.title, node.tagline
 // add score to the yield clause
 
 CALL db.index.fulltext.queryNodes(
+     'MovieTaglineFTIndex', 'real OR world') YIELD node, score
+RETURN node.title, score
+
+CALL db.index.fulltext.queryNodes(
      'MovieTaglineFTIndex', 'real AND world') YIELD node, score
 RETURN node.title, score
 
