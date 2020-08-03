@@ -1,0 +1,160 @@
+// no such thing as a primary key in Neo4j.
+// however you can have multiple properties on nodes that must be unique.
+// single property indexes used for:
+// =
+// >, >=, <, <=
+// IN
+// STARTS WITH, ENDS WITH, CONTAINS
+// exists()
+// distances
+// point()
+
+// composite indexes are used only for = checks and list membership.
+
+// note: create indexes after data has been loaded into graph
+
+// indexes for range searches
+
+// adding index for a property of a node can greatly reduce the number
+// of nodes the graph engine needs to traverse in order to fulfill a query.
+
+MATCH (m:Movie)
+WHERE 1990 < m.released < 2000
+SET m.videoFormat = 'DVD'
+
+// creating a single-property index
+
+// create index to improve graph engine performance.
+
+// unique constraint on a property is an index so no need to create an index
+// on those properties with uniqueness constraints.
+// An index on its own doesn't guarantee uniqueness.
+
+CREATE INDEX MovieReleased FOR (m:Movie) ON (m.released)
+
+// creating composite indexes
+
+// if a set of properties for a node must be unique for every node then 
+// you should create a constraint as a node key, rather than an index.
+
+// if duplication is allowed then create a composite index.
+
+MATCH (m:Movie)
+WHERE m.released >= 2000
+SET m.videoFormat = 'DVD';
+MATCH (m:Movie)
+WHERE m.released < 2000
+SET m.videoFormat = 'VHS'
+
+// notice the use of a semi-colon ; to separate Cypher statements.
+// if you want to execute multiple Cypher statements, you must separate them.
+
+CREATE INDEX MovieReleasedVideoFormat FOR (m:Movie) ON (m.released, m.videoFormat)
+
+// creating full-text schema indexes
+
+// full-text schema index based on string values only.
+// provide additional search capabilities.
+// can be used:
+
+// Node or relationship properties
+// Single property or multiple properties
+// Single or multiple types of nodes (labels)
+// Single or multiple types of relationships
+
+// Example - full-text schema index
+
+CALL db.index.fulltext.createNodeIndex(
+      'MovieTitlePersonName',['Movie', 'Person'], ['title', 'name'])
+
+// retrieving configured indexes
+
+CALL db.indexes()
+
+// create a full-text schema index on properties of relationships using:
+
+CALL db.indexfulltext.createRelationshipIndex()
+
+// using a full-text schema index
+
+// example - find all movies and person names that contain string Jerry
+
+CALL db.index.fulltext.queryNodes(
+     'MovieTitlePersonName', 'Jerry') YIELD node
+RETURN node
+
+// retrieving the score for a full-text serach
+
+// using a full-text schema index, a hit score representing closeness
+// of the values in the graph to the query string is returned
+
+CALL db.index.fulltext.queryNodes(
+     'MovieTitlePersonName', 'Matrix') YIELD node, score
+RETURN node.title, score
+
+// Lucene score.
+
+// example - search on a particular property.
+
+// specify the property you want to search for. Looking for Jerry, only as
+// a name property of a Person node:
+
+CALL db.index.fulltext.queryNodes(
+     'MovieTitlePersonName', 'name: Jerry') YIELD node
+RETURN node
+
+// managing indexes
+
+CALL db.indexes()
+
+// dropping an index
+
+DROP INDEX MovieReleasedVideoFormat
+
+// dropping a full text schema index
+
+CALL db.index.fulltext.drop('MovieTitlePersonName')
+
+// confirm indexes have been dropped
+
+CALL db.indexes()
+
+// Exercises
+
+// Create a single-property index on the born property of a 
+// Person node naming the index PersonBornIndex.
+
+CREATE INDEX PersonBornIndex FOR (p:Person) ON (p.born)
+
+// view all indexes
+
+CALL db.indexes()
+
+// drop index created above
+
+DROP INDEX PersonBornIndex
+
+// create a full-text schema for the tagline property of the Movie
+// nodes named MovieTaglineFTIndex
+
+CALL db.index.fulltext.createNodeIndex('MovieTaglineFTIndex', ['Movie'], ['tagline'])
+
+// a query to find all movies with taglines containing strings "real" or "world"
+
+// same but strings "real" and "world"
+
+CALL db.index.fulltext.queryNodes('MovieTaglineFTIndex','real OR world') Yield node 
+RETURN node.title, node.tagline
+
+CALL db.index.fulltext.queryNodes('MovieTaglineFTIndex', 'real AND world') YIELD node
+RETURN node.title, node.tagline
+
+// add score to the yield clause
+
+CALL db.index.fulltext.queryNodes(
+     'MovieTaglineFTIndex', 'real AND world') YIELD node, score
+RETURN node.title, score
+
+// drop the full-text schema index
+
+CALL db.index.fulltext.drop('MovieTaglineFTIndex')
