@@ -1,0 +1,178 @@
+// Use parameters
+// analyse cypher execution
+// monitor queries
+
+// using cypher parameters
+
+// example
+
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = $actorName
+RETURN m.released, m.title ORDER BY m.released DESC
+
+// at runtime if the parameter $actorName has a value
+// it will be used.
+
+// setting a parameter
+
+// set values for parameters that will be effective during your session
+
+// example
+
+:param actorName => 'Tom Hanks'
+
+// :param is a client-side command.
+
+// it takes a name and expression and stores the value of that expression
+// for the name in the session.
+
+// you need only change the value of the parameter and not the cypher statement
+// to test different values.
+
+// setting multiple parameters
+
+// use JSON-style syntax to set more than one parameter to a value.
+
+// example
+
+:params {actorName: 'Tom Cruise', movieName: 'Top Gun'}
+
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = $actorName AND m.title = $movieName
+RETURN p, m
+
+// remove a parameter from your session
+
+// or clear all use:
+
+:params {}
+
+// viewing parameters
+
+:params
+
+// analysing queries
+
+// to analyse a query use:
+
+// EXPLAIN
+
+// PROFILE
+
+// Using EXPLAIN
+
+// example
+
+:params {actorName: 'Hugo Weaving', year: 2000}
+
+EXPLAIN MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = $actorName AND
+      m.released <  $year
+RETURN p.name, m.title, m.released
+
+// result is a sequence of steps.
+
+// rows are retrieved from graph and passed on to subsequent steps.
+
+// also estimates number of rows expected to be returned.
+
+// EXPLAIN does not run query. Produces the query plan.
+
+// Good graph data model and query is one where number of rows processed
+// is minimised.
+
+// Using PROFILE
+
+PROFILE MATCH (p:Person)-[:ACTED_IN]->(m:Movie)
+WHERE p.name = $actorName AND
+      m.released <  $year
+RETURN p.name, m.title, m.released
+
+// db hits - number of times the graph engine accessed the database.
+// db hits affects the performance of the cypher statement so is very important.
+
+// eaxmple when PROFILE with no node labels the DB hits increases.
+// as all nodes need to be scanned to perform this query.
+
+// total time in milliseconds is greater than normal as we've to access the
+// entire db.
+
+// monitoring queries
+
+// two reasons why query may take a long time:
+
+// query is returning a lot of data. Ex.
+// MATCH (a)--(b)--(c)--(d)--(e)--(f)--(g) RETURN a
+// query takes a long tim to execute in the graph engine. Ex.
+// MATCH (a), (b), (c), (d), (e) RETURN count(id(a))
+
+// killing a query
+
+// click the x button to kill page.
+
+// example
+
+// :queries command check if query is taking a long time or query 
+// has a lot of results.
+
+// Suppose you are executing queries in Neo4j Browser Session A and 
+// monitoring them in Neo4j Browser Session B with the :queries command. 
+// What are some ways that you can kill a query?
+
+// You can close the result pane in Session A, if the query can be seen in
+// Session B.
+
+// You can kill any running query seen in Session B.
+
+// You can close the Neo4j Browser that is running Session A.
+
+// Exercises
+
+//
+
+MATCH (r:Person)-[rel:REVIEWED]->(m:Movie)<-[:ACTED_IN]-(a:Person)
+RETURN DISTINCT r.name, m.title, m.released, rel.rating, collect(a.name)
+
+// Create a parameter for year is 2000
+
+:param year => 2000
+
+// Modify the Cypher query you just wrote to filter by the year parameter.
+
+MATCH (r:Person)-[rel:REVIEWED]->(m:Movie)<-[:ACTED_IN]-(a:Person)
+WHERE m.released = $year
+RETURN  DISTINCT r.name, m.title, m.released, rel.rating, collect(a.name)
+
+// change parameter to 2006
+
+:param year => 2006
+
+// rerun above query
+
+// add two params year 2006 and rating 65
+
+:params {year: 2006, ratingValue: 65}
+
+// add new filter to query
+
+MATCH (r:Person)-[rel:REVIEWED]->(m:Movie)<-[:ACTED_IN]-(a:Person)
+WHERE m.released = $year AND rel.rating > $ratingValue
+RETURN  DISTINCT r.name, m.title, m.released, rel.rating, collect(a.name)
+
+// view query plan
+
+EXPLAIN MATCH (r:Person)-[rel:REVIEWED]->(m:Movie)<-[:ACTED_IN]-(a:Person)
+WHERE m.released = $year AND rel.rating > $ratingValue
+RETURN  DISTINCT r.name, m.title, m.released, rel.rating, collect(a.name)
+
+// view metrics of query
+
+PROFILE MATCH (r:Person)-[rel:REVIEWED]->(m:Movie)<-[:ACTED_IN]-(a:Person)
+WHERE m.released = $year AND rel.rating > $ratingValue
+RETURN  DISTINCT r.name, m.title, m.released, rel.rating, collect(a.name)
+
+// remove labels to nodes and relationships and view metrics again
+
+PROFILE MATCH (r)-[rel]->(m)<-[:ACTED_IN]-(a) 
+WHERE m.released = $year AND rel.rating > $ratingValue 
+RETURN DISTINCT r.name, m.title, m.released, rel.rating, collect(a.name)
