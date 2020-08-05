@@ -1,0 +1,82 @@
+// importing data into Neo4j
+
+// options depend on:
+// how much data
+// tools you're using
+// how much time you have
+
+// prepare for the import
+
+// what to consider:
+// names of entities (node labels)
+// names of relationships.
+// names of properties for nodes and relationships
+// constraints to define
+// indexes
+// important queries
+
+// above should be agreed upon before you import data.
+
+// Using Cypher's LOAD CSV for importing data
+
+// Use LOAD CSV clause to read CSV data as rows and use rows to create
+// nodes and relationships in graph.
+
+// to perform CSV import, Neo4j database must be started.
+
+// requirements for using LOAD CSV:
+// CSV files extracted from an RDBMS
+// Neo4j Browser or Cyper-shell
+// Neo4j database running locally, in Neo4j Aura, in Neo4j Sandbox
+// Optionally using Neo4j cluster
+// Special handling if > 100K lines of data
+
+// Using APOC and Cypher for importing data
+
+// APOC can read CSV, XML, GraphML, JSON.
+
+// APOC good for iteration and batching.
+
+// requirements for using APOC:
+// CSV, XML, JSON files extracted from RDBMS
+// Neo4j Browser or Cyper-shell
+// Neo4j database running locally, in Neo4j Aura, in Neo4j Sandbox
+// Optionally using Neo4j cluster
+// No limit to size of data to import
+
+// note: APOC's jdbc connection features to access live RDBMS. 
+
+// Using Drivers via Bolt
+
+// requirements for using Drivers via Bolt
+
+// Neo4j Browser or Cypher-shell.
+// Neo4j database running locally, in Neo4j Aura, in Neo4j Sandbox.
+// Optionally using a Neo4j Cluster.
+// Live RDBMS Server.
+// Application responsible for transaction scoping.
+// No limit to size of data to import.
+
+// Using neo4j-admin import tool
+
+// source data is CSV format.
+// it is the fastest way of importing data.
+// it is done offline.
+// database can only be started after import has been completed.
+
+// Requirements for using neo4j-admin import tool
+// CSV files extracted from RDBMS
+// Neo4j database running locally.
+// no limit to size of data to import.
+
+// using ETL tool to import data
+
+// not great for complex graph data model.
+// ETL tool is a generic load tool.
+
+// requirements for using ETL tool:
+// Neo4j desktop with ETL tool installed.
+// Neo4j database running locally, in Neo4j Aura, in Neo4j Sandbox.
+// Optionally using Neo4j cluster.
+// Live RDBMS server.
+// No limit to size of data to import.
