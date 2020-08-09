@@ -1,0 +1,250 @@
+// Installing APOC
+
+// if using Neo4j Desktop need to add APOC library
+
+// Stop the database server.
+// For the project you are working with, select “+” in the Add Plugin panel.
+// Select APOC to install.
+// Close the install panel.
+// Start the database server.
+
+// confirming if APOC is available
+
+CALL dbms.procedures()
+YIELD name WHERE name STARTS WITH "apoc"
+RETURN name
+
+// using APOC to clear graph
+
+// clear database of all constraints, indexes, nodes, and relationships
+
+// Delete all constraints and indexes
+CALL apoc.schema.assert({},{},true);
+// Delete all nodes and relationships
+CALL apoc.periodic.iterate(
+  'MATCH (n) RETURN n',
+  'DETACH DELETE n',
+  { batchSize:500 }
+)
+
+// Using APOC during import
+
+// faster than LOAD CSV
+
+// ensure to check and transform data - if needed - before importing wiht APOC
+
+CREATE CONSTRAINT UniqueMovieIdConstraint ON (m:Movie) ASSERT m.id IS UNIQUE;
+CREATE CONSTRAINT UniquePersonIdConstraint ON (p:Person) ASSERT p.id IS UNIQUE;
+
+// import the people and movie data (partial; no relationships)
+LOAD CSV WITH HEADERS FROM
+     'https://data.neo4j.com/v4.0-intro-neo4j/movies2.csv' AS row
+WITH row.movieId as movieId, row.title AS title, row.genres AS genres,
+     toInteger(row.releaseYear) AS releaseYear, toFloat(row.avgVote) AS avgVote,
+     collect({id: row.personId, name:row.name, born: toInteger(row.birthYear),
+        died: toInteger(row.deathYear),personType: row.personType,
+        roles: split(coalesce(row.characters,""),':')}) AS personData
+MERGE (m:Movie {id:movieId})
+   ON CREATE SET m.title=title, m.avgVote=avgVote,
+      m.releaseYear=releaseYear, m.genres=split(genres,":")
+WITH *
+UNWIND personData AS person
+MERGE (p:Person {id: person.id})
+   ON CREATE SET p.name = person.name, p.born = person.born, p.died = person.died
+
+// Using APOC for conditional processing
+
+// if constraints defined before don't need below:
+
+CREATE CONSTRAINT UniqueMovieIdConstraint ON (m:Movie) ASSERT m.id IS UNIQUE;
+CREATE CONSTRAINT UniquePersonIdConstraint ON (p:Person) ASSERT p.id IS UNIQUE;
+
+// load using the following:
+
+LOAD CSV WITH HEADERS FROM
+     'https://data.neo4j.com/v4.0-intro-neo4j/movies2.csv' AS row
+WITH row.movieId as movieId, row.title AS title, row.genres AS genres,
+     toInteger(row.releaseYear) AS releaseYear, toFloat(row.avgVote) AS avgVote,
+     collect({id: row.personId, name:row.name, born: toInteger(row.birthYear),
+            died: toInteger(row.deathYear),personType: row.personType,
+            roles: split(coalesce(row.characters,""),':')}) AS people
+MERGE (m:Movie {id:movieId})
+   ON CREATE SET m.title=title, m.avgVote=avgVote,
+      m.releaseYear=releaseYear, m.genres=split(genres,":")
+WITH *
+UNWIND people AS person
+MERGE (p:Person {id: person.id})
+   ON CREATE SET p.name = person.name, p.born = person.born, p.died = person.died
+// continue processing and use the personType to create the relationships
+WITH  m, person, p
+CALL apoc.do.when(person.personType = 'ACTOR',
+     "MERGE (p)-[:ACTED_IN {roles: person.roles}]->(m)
+                ON CREATE SET p:Actor",
+     "MERGE (p)-[:DIRECTED]->(m)
+         ON CREATE SET p:Director",
+     {m:m, p:p, person:person}) YIELD value
+RETURN count(*)  // cannot end query with this type of APOC call
+
+// The first argument to apoc.do.when() is the data that is tested. 
+// The second argument is the Cypher code to execute if the test returns true. 
+// The third argument is the Cypher code to execute if the test returns false. 
+// The last argument is the object that describes the mapping of variables both outside of the call and inside the call.
+
+// Using APOC to import from CSV
+
+// if constraints defined before do not use the below:
+
+CREATE CONSTRAINT UniqueMovieIdConstraint ON (m:Movie) ASSERT m.id IS UNIQUE;
+CREATE CONSTRAINT UniquePersonIdConstraint ON (p:Person) ASSERT p.id IS UNIQUE;
+
+// load using periodic iterate
+
+CALL apoc.periodic.iterate(
+"CALL apoc.load.csv('https://data.neo4j.com/v4.0-intro-neo4j/movies2.csv' )
+ YIELD map AS row RETURN row",
+ "WITH row.movieId as movieId, row.title AS title, row.genres AS genres,
+      toInteger(row.releaseYear) AS releaseYear, toFloat(row.avgVote) AS avgVote,
+      collect({id: row.personId, name:row.name, born: toInteger(row.birthYear),
+      died: toInteger(row.deathYear),personType: row.personType,
+      roles: split(coalesce(row.characters,''),':')}) AS people
+ MERGE (m:Movie {id:movieId})
+    ON CREATE SET m.title=title, m.avgVote=avgVote,
+       m.releaseYear=releaseYear, m.genres=split(genres,':')
+ WITH *
+ UNWIND people AS person
+ MERGE (p:Person {id: person.id})
+   ON CREATE SET p.name = person.name, p.born = person.born, p.died = person.died
+ WITH  m, person, p
+ CALL apoc.do.when(person.personType = 'ACTOR',
+      'MERGE (p)-[:ACTED_IN {roles: person.roles}]->(m)
+                 ON CREATE SET p:Actor',
+      'MERGE (p)-[:DIRECTED]->(m)
+          ON CREATE SET p:Director',
+      {m:m, p:p, person:person}) YIELD value AS value
+       RETURN count(*)  ",
+{batchSize: 500}
+)
+
+// The first argument to apoc.periodic.iterate() is the call to apoc.load.csv() where we provide the file name and it returns a row. 
+// The second argument is the same Cypher code you saw earlier. 
+// The only thing that is different is that you must ensure that the code is in double quotes and the Cypher code does not use double-quotes (or visa versa). 
+// The final argument is the size of the batch, 500.
+
+// using APOC to load JSON
+
+// become familiar with data first.
+
+// load using apoc.load.json
+
+WITH "https://api.stackexchange.com/2.2/search?page=1&pagesize=5&order=asc&sort=creation&tagged=neo4j&site=stackoverflow&filter=!5-i6Zw8Y)4W7vpy91PMYsKM-k9yzEsSC1_Uxlf" AS uri
+CALL apoc.load.json(uri)
+YIELD value AS data
+UNWIND data.items as q
+RETURN q
+
+// We specify pagesize, 5 in the URI. 
+// This retrieves 5 questions. 
+// We then UNWIND the data and return each question, q.
+
+// Viewing keys in the JSON data
+
+WITH "https://api.stackexchange.com/2.2/search?page=1&pagesize=5&order=asc&sort=creation&tagged=neo4j&site=stackoverflow&filter=!5-i6Zw8Y)4W7vpy91PMYsKM-k9yzEsSC1_Uxlf" AS uri
+CALL apoc.load.json(uri)
+YIELD value AS data
+UNWIND data.items as q
+RETURN keys(q)
+
+// viewing data to be loaded
+
+WITH "https://api.stackexchange.com/2.2/search?page=1&pagesize=5&order=asc&sort=creation&tagged=neo4j&site=stackoverflow&filter=!5-i6Zw8Y)4W7vpy91PMYsKM-k9yzEsSC1_Uxlf" AS uri
+CALL apoc.load.json(uri)
+YIELD value AS data
+UNWIND data.items as q
+RETURN q.question_id, q.title, q.tags, q.is_answered, q.owner.display_name
+
+// creating the graph from JSON
+
+WITH "https://api.stackexchange.com/2.2/search?page=1&pagesize=5&order=asc&sort=creation&tagged=neo4j&site=stackoverflow&filter=!5-i6Zw8Y)4W7vpy91PMYsKM-k9yzEsSC1_Uxlf" AS uri
+CALL apoc.load.json(uri)
+YIELD value AS data
+UNWIND data.items as q
+MERGE (question:Question {id: q.question_id})
+  ON CREATE SET  question.title = q.title,
+                 question.tags = q.tags,
+                 question.is_answered = q.is_answered
+MERGE (user:User {name: q.owner.display_name})
+MERGE (user)-[:ANSWERED]->(question)
+
+// We will use all values, except owner.display_name to create a Question node. 
+// We will use owner.display_name to create the User nodes. 
+
+// Exercises
+
+// Write and execute Cypher code to view the first 100 rows of this file.
+// From: https://data.neo4j.com/v4.0-intro-neo4j/movies2.csv
+// Or, alternatively, file:///movies2.csv
+
+LOAD CSV WITH HEADERS FROM 'file:///movies2.csv' 
+AS line RETURN line
+LIMIT 100
+
+// Create uniqueness constraints for id porperty for a Person node
+// and the id property for a Movie node.
+
+CREATE CONSTRAINT UniquePersonIdConstraint ON (p:Person) ASSERT p.id IS UNIQUE;
+CREATE CONSTRAINT UniqueMovieIdConstraint ON (m:Movie) ASSERT m.id IS UNIQUE;
+
+// load the data with APOC
+
+CALL apoc.periodic.iterate(
+"CALL apoc.load.csv('https://data.neo4j.com/v4.0-intro-neo4j/movies2.csv' ) YIELD map AS row RETURN row",
+"WITH row.movieId as movieId, row.title AS title, row.genres AS genres, toInteger(row.releaseYear) AS releaseYear, toFloat(row.avgVote) AS avgVote,
+ collect({id: row.personId, name:row.name, born: toInteger(row.birthYear), died: toInteger(row.deathYear),personType: row.personType, roles: split(coalesce(row.characters,''),':')}) AS people
+ MERGE (m:Movie {id:movieId})
+    ON CREATE SET m.title=title, m.avgVote=avgVote,
+       m.releaseYear=releaseYear, m.genres=split(genres,':')
+ WITH *
+ UNWIND people AS person
+ MERGE (p:Person {id: person.id})
+    ON CREATE SET p.name = person.name, p.born = person.born, p.died = person.died
+ WITH  m, person, p
+ CALL apoc.do.when(person.personType = 'ACTOR',
+      'MERGE (p)-[:ACTED_IN {roles: person.roles}]->(m)
+                 ON CREATE SET p:Actor',
+      'MERGE (p)-[:DIRECTED]->(m)
+          ON CREATE SET p:Director',
+      {m:m, p:p, person:person}) YIELD value AS value
+       RETURN count(*)  ",
+{batchSize: 500}
+)
+
+// delete the graph including all constraints and indexes
+
+// Delete all constraints and indexes
+CALL apoc.schema.assert({},{},true);
+// Delete all nodes and relationships
+CALL apoc.periodic.iterate(
+  'MATCH (n) RETURN n',
+  'DETACH DELETE n',
+  { batchSize:500 }
+)
+
+// Question: what apoc procedure can be used to batch transaction when you 
+// have lots of data:
+
+// Answer: apoc.periodic.iterate()
+
+// Question: The procedure apoc.do.when() is used for:
+
+// Answer:
+
+// (1) Executing cypher code when condition is true and alternate cypher code
+// when condition is false.
+// (2) Understanding how many operations occurred during the execution.
+
+// Question: What does CALL apoc.schema.assert({},{},true) do?
+
+// Answer:
+
+// (1) Drops all constraints in the graph
+// (2) Drops all indexes in the graph
