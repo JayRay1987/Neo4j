@@ -1,0 +1,111 @@
+// used for large datasets.
+
+// what is neo4j-admin?
+
+// bin folder contains:
+// (1) neo4j - used for starting, stopping and checking status of neo4j instance.
+// (2) cypher-shell - command-line version of cypher interface
+// (3) admin-tool - used for administrative activites
+
+// use neo4j-admin when you need to import large amounts of data eg > 10M nodes
+
+// preparing for import
+
+// headers
+// separators.
+// formatted.
+// can't transform data during import.
+// ensure CSV files are clean and ready to import.
+
+// differences between neo4j-admin import and cypher import:
+// (1) database to be imported must not exist as it will be created on import
+// (2) header info has additional info used for creating nodes and relationships
+// (3) node csv files are structured differently from relationship csv files
+// (4) all csv files must use the same field separator
+// (5) constraints and indexes are created after import.
+
+// csv files must have following format:
+// (1) for both nodes and relationships, header info must be associate with the data
+// (2) header info contains ID uniquely identify the record, optional node labels
+// relationship types, and names for the properties representing the imported data.
+// (3) csv can have header row or header info in separate csv file
+
+// csv file for nodes: beat
+
+// example of beat.csv with embedded header info
+
+id:ID(beat-ref),:LABEL
+1132,Beat
+0813,Beat
+0513,Beat
+
+// example of crime.csv
+
+id:ID(crime-ref),:LABEL,date,description
+
+8920441,Crime,12/07/2012 07:50:00 AM,AUTOMOBILE
+4730813,Crime,05/09/2006 08:20:00 AM,POCKET-PICKING
+7150780,Crime,09/28/2009 01:00:00 AM,CHILD ABANDONMENT
+4556970,Crime,12/16/2005 08:39:24 PM,POSS: CANNABIS 30GMS OR LESS
+9442492,Crime,12/28/2013 12:15:00 PM,OVER $500
+
+// id value is used to create id property for the node.
+// label of the node is crime.
+// date and description values are used to create properties for each node.
+// ID(crime-ref) used to store a reference to the node that is created so that
+// it can be used later in the import.
+
+// example of PrimaryType.csv
+
+id:ID(primarytype-ref)
+ARSON
+OBSCENITY
+ROBBERY
+THEFT
+CRIM SEXUAL ASSAULT
+BURGLARY
+
+// label not specified in header or data so need to specify in argument when
+// importing.
+
+// csv files for relationships
+
+// to create the :ON_BEAT relationships between Crime and Beat nodes:
+
+:START_ID(crime-ref),:END_ID(beat-ref),:TYPE
+6978096,0911,ON_BEAT
+3170923,2511,ON_BEAT
+3073515,1012,ON_BEAT
+8157905,0113,ON_BEAT
+
+// import tool has previously created Crime and Beat nodes so uses those saved
+// references to process this relationship.
+
+// crimesPrimaryTypes.csv, used to create relationship between crime and primary 
+// type
+
+:START_ID(crime-ref),:END_ID(primarytype-ref)
+5221115,NARCOTICS
+4522835,DECEPTIVE PRACTICE
+3432518,BATTERY
+6439993,CRIMINAL TRESPASS
+
+// no relationship specified in the data above so will have to specified in 
+// argument when importing.
+
+// importing the data
+
+// imprting the data creates a database so database should be empty or
+// not exist.
+
+// simplified syntax:
+
+neo4j-admin import
+  --database <database-name>
+  --nodes [<rheader-csv-file-1>,]<csv-file-1>
+  --nodes=<Label>=[<rheader-csv-file-2>,]<csv-file-2>
+  --relationships [<jheader-csv-file-1>,]<join-csv-file-1>
+  --relationships=<REL_TYPE>=[<jheader-csv-file-2>,]<join-csv-file-2>
+  --trim-strings=true
+  > import.out
+
