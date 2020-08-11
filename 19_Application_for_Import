@@ -1,0 +1,162 @@
+// in a java based application, you can import data by establishing a connection
+// between a relational database and Neo4j database to read from the relational
+// db visa jdbc drivers and access the Neo4j db using appropriate language drivers
+
+// Why use application to import?
+
+// if you're importing data from a relational db to create nodes and relationships
+// in a graph, you can use Neo4j supported languages.
+// using these languages gives you more fine-grained control of the process.
+
+// drivers supported:
+// (1) java
+// (2) javascript
+// (3) python
+// (4) C#
+// (5) Go
+
+// What control do you have using the above drivers?
+// what node and relationship updates can be in a transaction
+// how large a transaction will be (i.e. batching)
+// how much concurrent processing you want to implement (parallel processing)
+
+// Synchronous or asynchronous access
+// wait for server or not?
+// some drivers support concurrency and others don't.
+// Java, C# support asynchronous
+
+// example Synchronous java ex
+
+// waits for call to return before continuing.
+
+String uri = "bolt://localhost:7687";
+Driver driver = GraphDatabase.driver(uri, AuthTokens.basic("neo4j", "p4ssw0rd"));
+
+try (Session session = driver.session()) {
+    session.readTransaction((tx) -> {
+        StatementResult result = tx.run("MATCH (a:Person) RETURN a.name");
+        while (result.hasNext()) {
+            Record record = result.next();
+            System.out.println(record.get("a.name"));
+        }
+    });
+}
+
+// example asynchronous java example
+
+// continue processing while call executes
+
+String uri = "bolt://localhost:7687";
+Driver driver = GraphDatabase.driver(uri, AuthTokens.basic("neo4j", "p4ssw0rd"));
+
+Session session = driver.session();
+session.readTransactionAsync(tx ->
+    tx.runAsync("MATCH (a:Country) RETURN a.name").thenCompose(cursor ->
+        cursor.forEachAsync(System.out::println)
+    )
+).whenComplete((ignore, error) -> session.closeAsync());
+
+// example synchronous python example
+
+uri = "bolt://localhost:7687"
+driver = GraphDatabase.driver(uri, auth=("neo4j", "p4ssw0rd"))
+
+def print_names(tx):
+    result = tx.run("MATCH (a:Person) RETURN a.name")
+    for record in result:
+        print(record["a.name"])
+
+with driver.session() as session:
+    session.read_transaction(print_names)
+
+// synchronous javascript example
+
+const neo4j = require('neo4j-driver').v1;
+const uri = 'bolt://localhost:7687';
+const driver = neo4j.driver(uri, neo4j.auth.basic('neo4j', 'p4ssw0rd'));
+
+const session = driver.session();
+const resultPromise = session.readTransaction(tx =>
+    tx.run('MATCH (a:Person) RETURN a.name')
+);
+resultPromise.then(result => {
+    result.records.forEach(record => console.log(record));
+    session.close();
+});
+
+// synchronous C# example
+
+var uri = "bolt://localhost:7687";
+var driver = GraphDatabase.Driver(uri, AuthTokens.Basic("neo4j", "p4ssw0rd"));
+
+using (var session = driver.Session()) {
+session.ReadTransaction(tx => {
+     	var result = tx.Run("MATCH (a:Person) RETURN a.name");
+foreach (var record in result) {
+Console.WriteLine(record["a.name"]);
+}
+});
+}
+
+// asynchronous C# example
+
+var uri = "bolt://localhost:7687";
+var driver = GraphDatabase.Driver(uri, AuthTokens.Basic("neo4j", "p4ssw0rd"));
+
+var session = driver.Session();
+try {
+    await session.ReadTransactionAsync(async tx => {
+      var result = await tx.RunAsync("MATCH (a:Country) RETURN a.name");
+      while (await result.FetchAsync()) {
+          Console.WriteLine(result.Current[0].As<string>());
+      }
+  });
+}
+finally {
+  await session.CloseAsync();
+}
+
+// example importing data from RDBMS to Neo4j
+
+// java code for retrieving data from an RDBMS and using it to create nodes in
+// the graph
+
+@GrabConfig( systemClassLoader=true )
+@Grapes([
+  @Grab(group='org.postgresql', module='postgresql', version='42.0.0'),
+  @Grab(group='org.neo4j.driver', module='neo4j-java-driver', version='4.0.0')
+])
+
+import org.neo4j.driver.*;
+import java.sql.*;
+Class.forName("org.postgresql.Driver");
+
+table = "products";
+JDBC = [url:"jdbc:postgresql://db-examples.cmlvojdj5cci.us-east-1.rds.amazonaws.com/northwind", user:"n4examples", pass:"36gdOVABr3Ex"];
+NEO4J=[url:"bolt://localhost:7687", user:"neo4j",pass:"training-helps"];
+
+// see https://neo4j.com/docs/api/java-driver/current/
+GraphDatabase.driver(NEO4J.url, AuthTokens.basic(NEO4J.user,
+                     NEO4J.pass)).withCloseable{ neo4j ->
+                     DriverManager.getConnection(JDBC.url,
+                            JDBC.user, JDBC.pass).withCloseable
+                            { rdbms ->
+                     stmt = rdbms.prepareStatement("SELECT * FROM ${table}");
+
+neo4j.session(
+      SessionConfig.builder().withDatabase("products").build()).withCloseable{
+      session -> session.writeTransaction { tx ->
+   stmt.executeQuery().withCloseable{ rs ->
+     meta = rs.getMetaData();
+     cols = meta.getColumnCount();
+     while (rs.next()) {
+        params = [:];
+        for (int i=0;i<cols;i++) {
+           params[meta.getColumnName(i+1)]=rs.getObject(i+1);
+        }
+        println(params);
+        tx.run("CREATE (n:${table}) SET n += \$props",
+               Values.value([props:params])).consume();
+     }
+   }
+}}}}
