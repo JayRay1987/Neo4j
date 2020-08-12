@@ -1,0 +1,104 @@
+// Why Neo4j ETL Tool?
+
+// the tool requires both the source RDBMS and the target DBMS online
+// lets you control the amount of data in RDBMS to be imported
+// customise how nodes and relationships will be created in the graph
+
+// steps for importing with ETL Tool
+
+// (1) install Neo4j ETL Tool
+// (2) Create and start Neo4j database
+// (3) Use Neo4j ETL Tool to import:
+// 	(a) specify and test the RDBMS connection
+//	(b) prepare mapping
+//	(c) view the default mapping to be performed
+//	(d) optionally, modify the default mapping
+//	(e) perform the import
+
+// install the Neo4j ETL Tool
+
+// Add application
+// click Neo4j ETL Tool
+
+// create and start the Neo4j instance
+
+// Neo4j graph must be started.
+
+// create the database
+
+create database customers;
+show databases
+
+// start the Neo4j ETL tool
+
+// connect to RDBMS
+
+// use ADD CONNECTION
+
+// connecting to the RDBMS
+
+// JDBC connection, fill in the details
+
+// connection tested and saved
+
+// test and save the RDBMS connection to ensure Neo4j ETL tool will be accessed.
+
+// prepare for mapping
+
+// select Neo4j Desktop project and te Neo4j instance to use for the mapping
+
+// start mapping
+
+// successful mapping
+
+// click next if successful
+
+// default node mapping
+
+// default relationship mapping
+
+// changing node labels and what data will be imported
+
+// change node properties
+
+// you can change what properties will be imported, their names and types 
+// by selecting the edit icon for a node
+
+// changing relationship types
+
+// modify the names of relationship and if they will be skipped upon import
+
+// saving the mapping
+
+// always save!
+
+// click next.
+
+// select the database for import
+
+// import the data
+
+// click IMPORT DATA
+
+// questions
+
+// What type of connection to the RDBMS is used for importing an RDBMS with the
+// Neo4j ETL Tool?
+
+// JDBC
+
+// What are some of the things that you can modify for the mapping from the RDBMS?
+
+// what nodes will be created
+
+// what relationships will be created
+
+// node labels
+
+// relationship labels.
+
+//what property information can be modified in the mapping?
+
+// node property names
+
+// node property types
