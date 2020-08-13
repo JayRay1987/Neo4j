@@ -4,7 +4,7 @@
 
 // Default db is the user db.
 
-// Neo4j DBMS - index-free adajcency
+// Neo4j DBMS - index-free adjacency
 
 // RDBMS - Pie for Anne. Walk to town hall (index), wait in line, walk to Anne's house.
 // No learning route. Have to do same thing everytime.
