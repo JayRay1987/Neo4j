@@ -27,14 +27,14 @@ car owns Jane doesn't make sense.
 // Another location node could be labelled business.
 
 // Relationship connects two nodes. Eg two nodes person and location could have a Lives_at relationship.
-// A relationship represents the verb or action betweem the two entities.
+// A relationship represents the verb or action between the two entities.
 
 // Married relationship between two person nodes would need two relationships.
 
-// Properties add additaionl detail to modes and relationships.
+// Properties add additional detail to nodes and relationships.
 
 // Node Person could have proprties - name and DOB.
 
-// Married Relationship  could have property - since 1978
+// Married Relationship could have property - since 1978
 
-// Location reltaionshio could have a property - address
+// Location relationship could have a property - address
