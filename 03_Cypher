@@ -37,7 +37,7 @@ MATCH(p:Person)
 RETURN p
 
 
-// All nodes of the same type need not have the smae properties
+// All nodes of the same type need not have the same properties
 // eg Movie node has title and released properties, and some have a tagline property
 
 CALL db.propertyKeys()
